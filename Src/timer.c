@@ -10,6 +10,10 @@
 
 #define CCER_CC1E	(1U << 0)
 
+#define DIER_UIE	(1U << 0)
+
+#define	SR_UIF 		(1U << 0)
+
 void timer3_ch1_pwm_init(void)
 {
 	/* Enable GPIOA peripheral clock */
@@ -22,11 +26,11 @@ void timer3_ch1_pwm_init(void)
 	/* Configure GPIOA6 as push-pull */
 	GPIOA->OTYPER &= ~(1U<<6);
 
-	/* Configure GPIOA9 as No pull-up, no pull-down */
+	/* Configure GPIOA6 as No pull-up, no pull-down */
 	GPIOA->PUPDR &= ~(1U<<12);
 	GPIOA->PUPDR &= ~(1U<<13);
 
-	/* Configure GPIOA9 speed as Medium speed */
+	/* Configure GPIOA6 speed as Medium speed */
 	GPIOA->OSPEEDR |=  (1U<<12);
 	GPIOA->OSPEEDR &= ~(1U<<13);
 
@@ -41,10 +45,10 @@ void timer3_ch1_pwm_init(void)
 	TIM3->PSC = 16 - 1;
 
 	/* Set auto-reload register (ARR) value */
-	TIM3->ARR = 300 - 1;
+	TIM3->ARR = 200 - 1;
 
 	/* Set pulse width */
-	TIM3->CCR1 = 1;
+	TIM3->CCR1 = (TIM3->ARR + 1) / 2;
 
 	/* Set PWM mode */
 	TIM3->CCMR1 &= ~(0x7 << 4);
@@ -64,4 +68,25 @@ void timer3_ch1_pwm_init(void)
 
 	/* Enable Timer */
 	TIM3->CR1 |= CR1_CEN;
+
+	/* Enable Timer interrupt */
+	TIM3->DIER |= DIER_UIE;
+
+	/* Enable Timer interrupt in NVIC */
+	NVIC_EnableIRQ(TIM3_IRQn);
+}
+
+void timer3_set_freq(uint16_t freq)
+{
+	if (freq < 16) return;
+
+	TIM3->ARR = (1000000U / freq) - 1;
+
+	TIM3->CCR1 = (TIM3->ARR + 1) / 2;
+}
+
+void TIM3_IRQHandler(void)
+{
+	/* Clear update interrupt flag */
+    TIM3->SR &= ~SR_UIF;
 }
