@@ -228,7 +228,7 @@ tmc2209_disable(&motorX);
 Internally:
 
 ```text
-TTMC2209_TOFF_DISABLE    
+TMC2209_TOFF_DISABLE    
 TMC2209_TOFF_ENABLE
 ```
 
