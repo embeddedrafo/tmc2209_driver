@@ -284,7 +284,7 @@ Example:
 ```c
 tmc2209_read_result_t result;
 
-result = tmc2209_read_register(&driver, GCONF);
+result = tmc2209_read_register(&motorX, GCONF);
 
 if (!result.error)
 {
