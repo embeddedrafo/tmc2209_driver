@@ -76,7 +76,7 @@ This allows the same driver to be used with different microcontrollers and UART 
 The driver uses a handle containing the UART address, communication callbacks and internal configuration state.
 
 ```c
-tmc2209_t driver = {
+tmc2209_t motorX = {
     .addr = UART_ADDRESS_0,
     .send = uart_send,
     .receive = uart_receive,
@@ -90,7 +90,7 @@ The application is responsible for providing the correct UART transport function
 The driver provides a default initialization function:
 
 ```c
-tmc2209_init_default(&driver);
+tmc2209_init_default(&motorX);
 ```
 
 The default configuration initializes:
@@ -116,7 +116,7 @@ The driver provides a convenient RMS current interface instead of requiring the 
 ### Set complete current configuration
 
 ```c
-tmc2209_set_current(&driver, 550, 1100, 6);
+tmc2209_set_current(&motorX, 550, 1100, 6);
 ```
 
 Parameters:
@@ -130,19 +130,19 @@ IHOLDDELAY = 6
 ### Change IHOLD
 
 ```c
-tmc2209_set_ihold(&driver, 550);
+tmc2209_set_ihold(&motorX, 550);
 ```
 
 ### Change IRUN
 
 ```c
-tmc2209_set_irun(&driver, 1100);
+tmc2209_set_irun(&motorX, 1100);
 ```
 
 ### Change IHOLDDELAY
 
 ```c
-tmc2209_set_ihold_delay(&driver, 6);
+tmc2209_set_ihold_delay(&motorX, 6);
 ```
 
 The driver maintains a software shadow of the `IHOLD_IRUN` register so individual parameters can be changed without unnecessarily losing the other fields.
@@ -152,25 +152,20 @@ The driver maintains a software shadow of the `IHOLD_IRUN` register so individua
 Microstepping can be configured through:
 
 ```c
-tmc2209_set_microsteps(
-    &driver,
-    TMC2209_MICROSTEP_16,
-    TMC2209_INTPOL_ENABLE
-);
+tmc2209_set_microsteps(&motorX,TMC2209_MICROSTEP_16,TMC2209_INTPOL_ENABLE);
 ```
-
 Supported microstep values:
 
 ```text
-256
-128
-64
-32
-16
-8
-4
-2
-Full step
+TMC2209_MICROSTEP_256 
+TMC2209_MICROSTEP_128
+TMC2209_MICROSTEP_64 
+TMC2209_MICROSTEP_32 
+TMC2209_MICROSTEP_16
+TMC2209_MICROSTEP_8
+TMC2209_MICROSTEP_4
+TMC2209_MICROSTEP_2
+TMC2209_MICROSTEP_FULLSTEP
 ```
 
 Interpolation can be enabled or disabled independently.
@@ -185,12 +180,8 @@ TMC2209_INTPOL_DISABLE
 The shaft direction can be inverted through the `GCONF.SHAFT` bit:
 
 ```c
-tmc2209_inverse_direction(
-    &driver,
-    TMC2209_SHAFT_INVERTED
-);
+tmc2209_inverse_direction(&motorX,TMC2209_SHAFT_INVERTED);
 ```
-
 Normal direction:
 
 ```c
@@ -215,10 +206,7 @@ TMC2209_MODE_SPREADCYCLE
 Example:
 
 ```c
-tmc2209_set_chopper_mode(
-    &driver,
-    TMC2209_MODE_STEALTHCHOP
-);
+tmc2209_set_chopper_mode(&motorX,TMC2209_MODE_STEALTHCHOP);
 ```
 
 ## Driver Enable / Disable
@@ -228,20 +216,20 @@ The driver uses the `CHOPCONF.TOFF` field to enable or disable the power stage.
 Enable:
 
 ```c
-tmc2209_enable(&driver);
+tmc2209_enable(&motorX);
 ```
 
 Disable:
 
 ```c
-tmc2209_disable(&driver);
+tmc2209_disable(&motorX);
 ```
 
 Internally:
 
 ```text
-TOFF = 0      -> Driver disabled
-TOFF != 0     -> Driver enabled
+TTMC2209_TOFF_DISABLE    
+TMC2209_TOFF_ENABLE
 ```
 
 ## VACTUAL
@@ -249,7 +237,7 @@ TOFF != 0     -> Driver enabled
 The driver provides access to the TMC2209 `VACTUAL` register:
 
 ```c
-tmc2209_set_vactual(&driver, 10000);
+tmc2209_set_vactual(&motorX, 10000);
 ```
 
 `VACTUAL` can be used to command internal velocity generation without external STEP pulses.
@@ -270,7 +258,7 @@ UART_ADDRESS_3
 Example:
 
 ```c
-driver.addr = UART_ADDRESS_0;
+motorX.addr = UART_ADDRESS_0;
 ```
 
 This allows multiple TMC2209 devices to share the same UART bus when their addresses are configured appropriately.
@@ -337,7 +325,7 @@ uint8_t uart_receive(uint8_t *data, uint8_t length)
 Then initialize the driver:
 
 ```c
-tmc2209_t driver = {
+tmc2209_t motorX = {
     .addr = UART_ADDRESS_0,
     .send = uart_send,
     .receive = uart_receive,
@@ -347,7 +335,7 @@ tmc2209_t driver = {
 After that:
 
 ```c
-tmc2209_init_default(&driver);
+tmc2209_init_default(&motorX);
 ```
 
 The TMC2209 driver itself remains independent of the MCU UART implementation.
@@ -410,54 +398,29 @@ void tmc2209_set_current(
     uint8_t ihold_delay
 );
 
-void tmc2209_set_ihold(
-    tmc2209_t *handler,
-    uint16_t ihold
-);
+void tmc2209_set_ihold(tmc2209_t *handler,uint16_t ihold);
 
-void tmc2209_set_irun(
-    tmc2209_t *handler,
-    uint16_t irun
-);
+void tmc2209_set_irun(tmc2209_t *handler,uint16_t irun);
 
-void tmc2209_set_ihold_delay(
-    tmc2209_t *handler,
-    uint16_t ihold_delay
-);
+void tmc2209_set_ihold_delay(tmc2209_t *handler,uint16_t ihold_delay);
 ```
 
 ### Motion control
 
 ```c
-void tmc2209_inverse_direction(
-    const tmc2209_t *handler,
-    tmc2209_shaft_t direction
-);
+void tmc2209_inverse_direction(const tmc2209_t *handler,tmc2209_shaft_t direction);
 
-void tmc2209_set_microsteps(
-    const tmc2209_t *handler,
-    tmc2209_microstep_t microstep,
-    tmc2209_intpol_t intpol
-);
+void tmc2209_set_microsteps(const tmc2209_t *handler,tmc2209_microstep_t microstep,tmc2209_intpol_t intpol);
 
-void tmc2209_set_vactual(
-    const tmc2209_t *handler,
-    int32_t value
-);
+void tmc2209_set_vactual(const tmc2209_t *handler,int32_t value);
 ```
 
 ### Chopper / driver state
 
 ```c
-void tmc2209_set_chopper_mode(
-    const tmc2209_t *handler,
-    tmc2209_chop_mode_t chop_mode
-);
+void tmc2209_set_chopper_mode(const tmc2209_t *handler,tmc2209_chop_mode_t chop_mode);
 
-void tmc2209_set_toff(
-    const tmc2209_t *handler,
-    tmc2209_toff_t toff_value
-);
+void tmc2209_set_toff(const tmc2209_t *handler,tmc2209_toff_t toff_value);
 
 void tmc2209_enable(const tmc2209_t *handler);
 
