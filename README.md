@@ -391,19 +391,9 @@ void tmc2209_init_default(tmc2209_t *handler);
 ### Current control
 
 ```c
-typedef struct {
-  tmc2209_uart_address_t addr;
-  tmc2209_uart_send send;
-  tmc2209_uart_receive receive;
-  uint32_t _ihold_irun_shadow;
-} tmc2209_t;
-
 void tmc2209_set_current(tmc2209_t *handler, uint16_t ihold, uint16_t irun, uint8_t ihold_delay);
-
 void tmc2209_set_ihold(tmc2209_t *handler, uint16_t ihold);
-
 void tmc2209_set_irun(tmc2209_t *handler, uint16_t irun);
-
 void tmc2209_set_ihold_delay(tmc2209_t *handler, uint16_t ihold_delay);
 ```
 
@@ -411,9 +401,7 @@ void tmc2209_set_ihold_delay(tmc2209_t *handler, uint16_t ihold_delay);
 
 ```c
 void tmc2209_inverse_direction(const tmc2209_t *handler, tmc2209_shaft_t direction);
-
 void tmc2209_set_microsteps(const tmc2209_t *handler, tmc2209_microstep_t microstep, tmc2209_intpol_t intpol);
-
 void tmc2209_set_vactual(const tmc2209_t *handler, int32_t value);
 ```
 
@@ -421,11 +409,8 @@ void tmc2209_set_vactual(const tmc2209_t *handler, int32_t value);
 
 ```c
 void tmc2209_set_chopper_mode(const tmc2209_t *handler, tmc2209_chop_mode_t chop_mode);
-
 void tmc2209_set_toff(const tmc2209_t *handler, tmc2209_toff_t toff_value);
-
 void tmc2209_enable(const tmc2209_t *handler);
-
 void tmc2209_disable(const tmc2209_t *handler);
 ```
 
