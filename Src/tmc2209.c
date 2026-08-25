@@ -22,7 +22,7 @@ void tmc2209_write_register(const tmc2209_t *handler, tmc2209_registers_t reg_ad
 	handler->send(packet, 8);
 }
 
-uint32_t tmc2209_read_register(const tmc2209_t *handler, tmc2209_registers_t reg_addr)
+tmc2209_read_result_t tmc2209_read_register(const tmc2209_t *handler, tmc2209_registers_t reg_addr)
 {
 
 	uint8_t  receive_data[8] = {0};
@@ -40,12 +40,21 @@ uint32_t tmc2209_read_register(const tmc2209_t *handler, tmc2209_registers_t reg
 
 	handler->receive(receive_data, 8);
 
-	reg_value |= (receive_data[3] & 0xFF) << 24;
-	reg_value |= (receive_data[4] & 0xFF) << 16;
-	reg_value |= (receive_data[5] & 0xFF) << 8;
-	reg_value |= (receive_data[6] & 0xFF) << 0;
+	uint8_t crc_read = tmc2209_crc(receive_data,7);
 
-	return reg_value ;
+	if (crc_read == receive_data[7])
+	{
+		reg_value |= ((uint32_t)receive_data[3] & 0xFF) << 24;
+		reg_value |= ((uint32_t)receive_data[4] & 0xFF) << 16;
+		reg_value |= ((uint32_t)receive_data[5] & 0xFF) << 8;
+		reg_value |= ((uint32_t)receive_data[6] & 0xFF) << 0;
+
+		return (tmc2209_read_result_t){ .value = reg_value, .error = 0 };
+	}
+	else
+	{
+		return (tmc2209_read_result_t){ .value = 0, .error = 1 };
+	}
 }
 
 uint8_t tmc2209_crc(uint8_t *data, uint8_t length)
@@ -174,37 +183,49 @@ void tmc2209_set_current(tmc2209_t *handler, uint16_t ihold, uint16_t irun, uint
 
 void tmc2209_inverse_direction(const tmc2209_t *handler, tmc2209_shaft_t direction)
 {
-	uint32_t reg_value = tmc2209_read_register(handler, GCONF);
+	tmc2209_read_result_t result = tmc2209_read_register(handler, GCONF);
+
+	if (result.error) return;
 
 	if (direction == TMC2209_SHAFT_NORMAL)
 	{
-		reg_value &= ~(1U<<3);
+		result.value &= ~(1U<<3);
 	}
 	else if (direction == TMC2209_SHAFT_INVERTED)
 	{
-		reg_value |= (1U<<3);
+		result.value |= (1U<<3);
+	}
+	else
+	{
+		return;
 	}
 
-    tmc2209_write_register(handler, GCONF, reg_value);
+    tmc2209_write_register(handler, GCONF, result.value);
 }
 
 void tmc2209_set_microsteps(const tmc2209_t *handler, tmc2209_microstep_t microstep, tmc2209_intpol_t intpol)
 {
-	uint32_t reg_value  = tmc2209_read_register(handler, CHOPCONF);
+	tmc2209_read_result_t result = tmc2209_read_register(handler, CHOPCONF);
 
-	reg_value &= ~(0xF << 24);
-	reg_value |=  (microstep & 0xF) << 24;
+	if (result.error) return;
+
+	result.value &= ~(0xF << 24);
+	result.value |=  (microstep & 0xF) << 24;
 
 	if (intpol == TMC2209_INTPOL_ENABLE)
 	{
-		reg_value |= (1U << 28);
+		result.value |= (1U << 28);
 	}
 	else if (intpol == TMC2209_INTPOL_DISABLE)
 	{
-		reg_value &= ~(1U << 28);
+		result.value &= ~(1U << 28);
+	}
+	else
+	{
+		return;
 	}
 
-	tmc2209_write_register(handler, CHOPCONF, reg_value);
+	tmc2209_write_register(handler, CHOPCONF, result.value);
 }
 
 void tmc2209_set_vactual(const tmc2209_t *handler, int32_t value)
@@ -216,33 +237,41 @@ void tmc2209_set_vactual(const tmc2209_t *handler, int32_t value)
 
 void tmc2209_set_chopper_mode(const tmc2209_t *handler, tmc2209_chop_mode_t chop_mode)
 {
-	uint32_t reg_value  = tmc2209_read_register(handler, GCONF);
+	tmc2209_read_result_t result = tmc2209_read_register(handler, GCONF);
+
+	if (result.error) return;
 
 	if (chop_mode == TMC2209_MODE_STEALTHCHOP)
 	{
-		reg_value &= ~(1U<<2);
+		result.value &= ~(1U<<2);
 	}
 	else if (chop_mode == TMC2209_MODE_SPREADCYCLE)
 	{
-		reg_value |= (1U<<2);
+		result.value |= (1U<<2);
+	}
+	else
+	{
+		return;
 	}
 
-    tmc2209_write_register(handler, GCONF, reg_value);
+    tmc2209_write_register(handler, GCONF, result.value);
 }
 
 void tmc2209_set_toff(const tmc2209_t *handler, tmc2209_toff_t toff_value)
 {
-	uint32_t reg_value  = tmc2209_read_register(handler, CHOPCONF);
+	tmc2209_read_result_t result = tmc2209_read_register(handler, CHOPCONF);
+
+	if (result.error) return;
 
 	if (toff_value > 15)
 	{
 		toff_value = 15;
 	}
 
-	reg_value &= ~(0xF << 0);
-	reg_value |=  (toff_value & 0xF) << 0;
+	result.value &= ~(0xF << 0);
+	result.value |=  (toff_value & 0xF) << 0;
 
-	tmc2209_write_register(handler, CHOPCONF, reg_value);
+	tmc2209_write_register(handler, CHOPCONF, result.value);
 }
 
 void tmc2209_enable(const tmc2209_t *handler)

@@ -45,7 +45,7 @@ void timer3_ch1_pwm_init(void)
 	TIM3->PSC = 16 - 1;
 
 	/* Set auto-reload register (ARR) value */
-	TIM3->ARR = 200 - 1;
+	TIM3->ARR = 300 - 1;
 
 	/* Set pulse width */
 	TIM3->CCR1 = (TIM3->ARR + 1) / 2;

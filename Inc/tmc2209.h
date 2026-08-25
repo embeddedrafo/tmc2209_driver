@@ -82,6 +82,12 @@ typedef enum
 	VACTUAL	   = 0x22
 } tmc2209_registers_t;
 
+typedef struct
+{
+	uint32_t value;
+	uint8_t	 error;
+} tmc2209_read_result_t;
+
 /* ==================== DRIVER HANDLE ==================== */
 
 typedef struct {
